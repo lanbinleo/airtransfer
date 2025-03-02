@@ -70,6 +70,12 @@ const failed_code = {
     "400": {"zh":"用户未登录，无法上传", "en": "User not logged in, cannot upload"},
     "401": {"zh":"上传文件过大，最大支持5GB", "en": "Uploaded file is too large, maximum support 5GB"},
     "402": {"zh":"用户剩余点数不足，无法上传", "en": "User has insufficient remaining points to upload"},
+    "410": {"zh":"缺少file_id或chunk_id参数", "en": "Missing file_id or chunk_id parameters"},
+    "411": {"zh":"无效的chunk_id", "en": "Invalid chunk_id"},
+    "412": {"zh":"缺少utoken参数", "en": "Missing utoken parameter"},
+    "413": {"zh":"无效的用户令牌", "en": "Invalid user token"},
+    "414": {"zh":"积分不足", "en": "Insufficient points"},
+    "415": {"zh":"扣除积分失败", "en": "Failed to deduct points"},
     "500": {"zh":"服务器错误，请稍后重试", "en": "Server error, please try again later"},
     "503": {"zh":"服务器维护中，请稍后重试", "en": "Server maintenance, please try again later"},
 }
@@ -439,7 +445,7 @@ function uploadChunk(file, fileId, chunkId, token) {
     const reader = new FileReader();
     reader.onload = function(e) {
         $.ajax({
-            url: '/upload/chunk?file_id=' + fileId + '&chunk_id=' + chunkId + '&token=' + token,
+            url: '/upload/chunk?file_id=' + fileId + '&chunk_id=' + chunkId + '&token=' + token + '&utoken=' + getUserTokenFromLocalStorage(),
             type: 'POST',
             data: e.target.result,
             processData: false,
