@@ -1,2 +1,20 @@
+# Ignore macOS system files
+.DS_Store
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+
+# Ignore Python cache directories
 __pycache__
+
+# Ignore specific JSON files
+bucket.json
+files.json
+history.json
+manifest.json
+
+# Ignore uploads directory
 uploads
