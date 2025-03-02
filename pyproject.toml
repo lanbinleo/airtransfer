@@ -1,0 +1,10 @@
+[project]
+name = "airtransfer"
+version = "0.1.0"
+description = "AirTransfer是一款简洁高效的文件传输工具，支持局域网内快速共享文件，无需依赖云服务或账号注册。"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.11",
+    "uvicorn>=0.34.0",
+]
