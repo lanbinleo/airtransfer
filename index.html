@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirTransfer - File Sharing Made Simple</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body data-lang="en">
+    <header class="header">
+        <a href="/" class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <span data-i18n="appName">AirTransfer</span>
+        </a>
+        <div class="actions">
+            <button class="language-toggle" id="langToggle">
+                <i class="fas fa-language"></i>
+            </button>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tab-container">
+            <div class="tab-header">
+                <button class="tab-btn active" data-tab="sendTab">
+                    <i class="fas fa-upload mr-2"></i>
+                    <span data-i18n="upload">Upload</span>
+                </button>
+                <button class="tab-btn" data-tab="receiveTab">
+                    <i class="fas fa-download mr-2"></i>
+                    <span data-i18n="retrieve">Retrieve</span>
+                </button>
+            </div>
+            
+            <div id="sendTab" class="tab-content card active" style="padding: 24px;">
+                <div class="upload-zone" id="dropZone">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3 class="upload-text" data-i18n="dropFilesHere">Drop files here or click to upload</h3>
+                    <p class="upload-subtext" data-i18n="supportedFiles">Supports all file types</p>
+                    <input type="file" id="fileInput" class="file-input" />
+                </div>
+                <div id="fileDetails" class="status status-info mb-3" style="display: none;">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    <span id="fileName"></span>
+                    <span id="fileSize"></span>
+                </div>
+                <button id="uploadBtn" class="btn btn-primary btn-full">
+                    <i class="fas fa-upload mr-2"></i>
+                    <span data-i18n="startUpload">Start Upload</span>
+                </button>
+                <div id="status" class="status status-info mt-3"></div>
+            </div>
+            
+            <div id="receiveTab" class="tab-content card" style="padding: 24px;">
+                <div class="input-group text-center">
+                    <h3 class="mb-3" data-i18n="enterCode">Enter 6-digit code</h3>
+                    <input type="text" id="codeInput" class="input input-code" placeholder="000000" maxlength="6" autocomplete="off" />
+                </div>
+                <button id="checkBtn" class="btn btn-primary btn-full">
+                    <i class="fas fa-search mr-2"></i>
+                    <span data-i18n="retrieveFile">Retrieve File</span>
+                </button>
+                <div id="fileInfo" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p data-i18n="footerText">© 2023 AirTransfer. Simple, Fast, Secure.</p>
+    </footer>
+
+    <!-- Upload Progress Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3 class="modal-title" id="uploadModalTitle" data-i18n="uploading">Uploading...</h3>
+            
+            <div id="uploadProgress">
+                <div class="progress-container">
+                    <svg width="120" height="120">
+                        <circle class="progress-ring-bg" cx="60" cy="60" r="54" />
+                        <circle class="progress-ring-fill" id="progressRing" cx="60" cy="60" r="54" />
+                    </svg>
+                    <span class="progress-text" id="progressText">0%</span>
+                </div>
+                <p id="modalStatus" class="status-info mt-3"></p>
+            </div>
+            
+            <div id="uploadSuccess" style="display: none;">
+                <i class="fas fa-check-circle" style="font-size: 48px; color: var(--success-color); margin-bottom: 20px;"></i>
+                <h3 class="mb-3" data-i18n="uploadComplete">Upload Complete</h3>
+                <p class="mb-3" data-i18n="shareCodeText">Share this code with recipient</p>
+                <div class="code-display" id="codeDisplay"></div>
+                <p id="successMessage" class="status-success"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input User Token Modal -->
+    <div id="tokenModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeTokenModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3 class="modal-title" data-i18n="enterToken">Enter Token</h3>
+            <input type="text" id="tokenInput" class="input input-token" placeholder="Token" />
+            <button id="tokenSubmit" class="btn btn-primary btn-full mt-3" data-i18n="submit">Submit</button>
+            <p id="tokenError" class="status-error mt-3"></p>
+            <p class="status-info">If you are a reciever, just close the modal.</p>
+
+        </div>
+    </div>
+
+    <script src="g4s.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
