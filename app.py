@@ -112,21 +112,69 @@ def merge_chunks(file_id: str):
 def delete_expire_files():
     try:
         # 删除bucket中所有的：1. 过期文件 2. 下载次数大于等于可下载次数的文件
+        expired_keys = []
         for k, v in bucket.items():
             if v["expired_time"] < time.time() or v["download_count"] >= v["avaliable_download_count"]:
                 # 删除result文件
                 try:
-                    os.remove(history[v["file_id"]]["path"])
-                    del bucket[k]
-                except:
-                    pass
+                    file_id = v["file_id"]
+                    if file_id in history:
+                        file_path = history[file_id]["path"]
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                        
+                        # 检查是否还有其他bucket项引用相同file_id
+                        referenced = False
+                        for bk, bv in bucket.items():
+                            if bk != k and bv["file_id"] == file_id:
+                                referenced = True
+                                break
+                        
+                        # 如果没有其他引用，从history中删除
+                        if not referenced:
+                            del history[file_id]
+                    
+                    expired_keys.append(k)
+                except Exception as e:
+                    print(f"清理文件时出错: {e}")
+                    
+        # 从bucket中删除过期项
+        for k in expired_keys:
+            del bucket[k]
+            
+        # 清理孤立的分块文件夹
+        active_file_ids = set(info["file_id"] for info in bucket.values())
+        if os.path.exists('uploads/parts'):
+            for folder in os.listdir('uploads/parts'):
+                if folder not in active_file_ids:
+                    folder_path = os.path.join('uploads/parts', folder)
+                    if os.path.isdir(folder_path):
+                        try:
+                            # 删除文件夹中的所有文件
+                            for file in os.listdir(folder_path):
+                                os.remove(os.path.join(folder_path, file))
+                            # 删除空文件夹
+                            os.rmdir(folder_path)
+                        except Exception as e:
+                            print(f"删除文件夹 {folder_path} 时出错: {e}")
+                            
         save_history()
-    except RuntimeError:
-        pass
+    except Exception as e:
+        print(f"清理过期文件时出错: {e}")
 
 def delete_tmp_files(file_id):
+    # 删除分块文件
     for i in range(files[file_id]["chunk_count"]):
-        os.remove(f'uploads/parts/{file_id}/{i}.chk')
+        try:
+            os.remove(f'uploads/parts/{file_id}/{i}.chk')
+        except FileNotFoundError:
+            pass  # 忽略已不存在的文件
+            
+    # 删除空文件夹
+    try:
+        os.rmdir(f'uploads/parts/{file_id}')
+    except OSError:
+        pass  # 忽略无法删除的文件夹（可能非空）
 
 def get_file_info(code):
     if bucket.get(code, None) is None:
@@ -262,4 +310,22 @@ async def download_file(code: str):
 
 if __name__ == '__main__':
     import uvicorn
+    import threading
+    import time
+    
+    # 定期清理过期文件的线程
+    def cleanup_task():
+        while True:
+            try:
+                delete_expire_files()
+                time.sleep(3600)  # 每小时清理一次
+            except Exception as e:
+                print(f"清理任务出错: {e}")
+                time.sleep(60)  # 出错后等待一分钟再次尝试
+    
+    # 启动清理线程
+    cleanup_thread = threading.Thread(target=cleanup_task, daemon=True)
+    cleanup_thread.start()
+    
+    # 启动服务器
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
