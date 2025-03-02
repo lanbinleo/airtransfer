@@ -10,6 +10,7 @@ app = FastAPI()
 files = {}  # 存储文件的分块信息
 history = {}  # 存储上传历史，主要是永远保留的文件数据
 bucket = {} # 文件id、上传id、下载次数、过期时间，主要是业务数据，储存有效的下载信息
+userData = {} # 用户数据
 
 # 读取history和bucket
 if os.path.exists('history.json'):
@@ -29,9 +30,42 @@ os.makedirs('uploads/results', exist_ok=True)
 
 CHUNK_SIZE = 5 * 1024 * 1024  # 5MB 固定分块大小
 
+def load_user_data():
+    global userData
+    if os.path.exists('userData.json'):
+        with open('userData.json', 'r') as f:
+            userData = json.loads(f.read())
+    else:
+        userData = {}
+
 def get_code():
     # 获取一个6位数取件码
     return ''.join([str(random.randint(0, 9)) for _ in range(6)])
+
+def deduct_credit(token):
+    load_user_data()
+    if token in userData:
+        if userData[token]["upload_chance"] >= 0:
+            userData[token]["upload_chance"] -= 1
+            save_user_data()
+            return userData[token]
+        
+def get_userid(token):
+    load_user_data()
+    if token in userData:
+        return userData[token]["user_id"]
+    return None
+
+def save_user_data():
+    with open('userData.json', 'w') as f:
+        f.write(json.dumps(userData))
+
+def get_remain_credit(token):
+    load_user_data()
+    if token in userData:
+        return userData[token]["upload_chance"]
+    return None
+        
 
 # 抽取业务逻辑：初始化上传
 def init_upload(filename: str, file_size: int):
@@ -74,7 +108,7 @@ def save_chunk(file_id: str, chunk_id: int, data: bytes, token: str):
     return "chunk uploaded"
 
 # 抽取业务逻辑：上传完成后合并分块
-def merge_chunks(file_id: str):
+def merge_chunks(file_id: str, userid: str):
     if file_id not in files:
         raise HTTPException(status_code=404, detail="file_id not found")
     filename = files[file_id]["filename"]
@@ -96,7 +130,7 @@ def merge_chunks(file_id: str):
     if bucket.get(code, None) is None:
         bucket[code] = {
             "file_id": file_id,
-            "user_id": "guest",
+            "user_id": userid,
             "upload_id": code,
             "download_count": 0,
             "avaliable_download_count": 1,
@@ -266,6 +300,7 @@ async def upload_chunk(request: Request):
         raise HTTPException(status_code=400, detail="invalid chunk_id")
     data = await request.body()
     msg = save_chunk(file_id, chunk_id, data, token)
+    deduct_credit(token)
     return JSONResponse({"message": msg})
 
 @app.post("/upload/finish")
@@ -277,7 +312,8 @@ async def finish_upload(request: Request):
         raise HTTPException(status_code=400, detail="缺少file_id或token参数")
     if files.get(file_id, {}).get("token") != token:
         raise HTTPException(status_code=403, detail="token错误")
-    msg, code = merge_chunks(file_id)
+    userdata = get_userid(token)
+    msg, code = merge_chunks(file_id, userdata)
     return JSONResponse({"message": msg, "code": code})
 
 @app.get("/info/{code}")
